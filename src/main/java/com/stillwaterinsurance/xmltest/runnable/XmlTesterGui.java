@@ -1,7 +1,10 @@
 package com.stillwaterinsurance.xmltest.runnable;
 
-import java.awt.BorderLayout;
-import java.awt.Insets;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Point;
+import java.awt.TextArea;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -9,102 +12,198 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.logging.Logger;
 
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
+import javax.swing.JLabel;
+import javax.swing.JSeparator;
+import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.UIManager;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.soap.SOAPException;
+import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.WindowConstants;
 import javax.xml.transform.TransformerException;
 
-import org.xml.sax.SAXException;
-
 import com.stillwaterinsurance.xmltest.service.EngineService;
+import com.stillwaterinsurance.xmltest.service.GuiPreferences;
 import com.stillwaterinsurance.xmltest.util.XmlTestUtils;
 
-public class XmlTesterGui extends JPanel implements ActionListener {
+
+public class XmlTesterGui extends JFrame {
+
 	private static final long serialVersionUID = 1L;
+	
+	private static final Logger LOGGER = Logger.getLogger(XmlTesterGui.class.getName());
+	
+	private JFileChooser fileChooser = new JFileChooser();
+	private File selectedFile;
 
-	JButton openButton;
-	JTextArea sendLog;
-	JTextArea receiveLog;
-	JFileChooser fileChooser = new JFileChooser();
+	private static final Map<Integer, String> engineUrls = setupEngineUrls();
 
+	private JButton btnRun;
+	@SuppressWarnings("rawtypes")
+	private JComboBox cbEngineUrl;
+	private JLabel jLabel1;
+	private JSeparator jSeparator1;
+	private JLabel lblEngineUrl;
+	private JButton openButton;
+	private TextArea receiveLog;
+	private TextArea sendLog;
+	private JLabel lblPrd;
+
+	/**
+	 * Creates new form XmlTesterGui
+	 */
+	@SuppressWarnings("rawtypes")
 	public XmlTesterGui() {
-		super(new BorderLayout());
+		initComponents();
 
-		sendLog = new JTextArea(40, 80);
-		sendLog.setMargin(new Insets(5, 5, 5, 5));
-		sendLog.setEditable(false);
-		final JScrollPane sendLogScrollPane = new JScrollPane(sendLog);
-
-		receiveLog = new JTextArea(40, 80);
-		receiveLog.setMargin(new Insets(5, 5, 5, 5));
-		receiveLog.setEditable(false);
-		final JScrollPane receiveLogScrollPane = new JScrollPane(receiveLog);
-
-		openButton = new JButton("Choose File");
-		openButton.addActionListener(this);
-
-		final JPanel buttonPanel = new JPanel();
-		buttonPanel.add(openButton);
-
-		final JPanel sendReceive = new JPanel();
-		sendReceive.add(sendLogScrollPane, BorderLayout.WEST);
-		sendReceive.add(receiveLogScrollPane, BorderLayout.EAST);
-
-		add(buttonPanel, BorderLayout.NORTH);
-		add(sendReceive, BorderLayout.SOUTH);
+		Iterator<Entry<Integer, String>> iterator = engineUrls.entrySet().iterator();
+		while (iterator.hasNext()) {
+			Map.Entry entry = iterator.next();
+			if (entry.getValue().equals(GuiPreferences.getEngineUri())) {
+				cbEngineUrl.setSelectedIndex((Integer) entry.getKey());
+				break;
+			}
+		}
 	}
 
-	@Override
-	public void actionPerformed(final ActionEvent actionEvent) {
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private void initComponents() {
 
-		// Handle open button action.
-		if (actionEvent.getSource() == openButton) {
+		jSeparator1 = new JSeparator();
+		receiveLog = new TextArea();
+		sendLog = new TextArea();
+		openButton = new JButton();
+		cbEngineUrl = new JComboBox();
+		jLabel1 = new JLabel();
+		lblEngineUrl = new JLabel();
+		btnRun = new JButton();
+		lblPrd = new JLabel();
+
+		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		setTitle("XML tester");
+		setLocation(new Point(50, 50));
+		setMaximumSize(new Dimension(1113, 622));
+
+		openButton.setText("Choose XML File");
+		openButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent evt) {
+				openButtonActionPerformed(evt);
+			}
+		});
+
+		cbEngineUrl.setModel(new DefaultComboBoxModel(new String[] { "local", "int", "qua", "ply", "prd" }));
+		cbEngineUrl.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent evt) {
+				cbEngineUrlActionPerformed(evt);
+			}
+		});
+
+		jLabel1.setText("Engine URL");
+
+		lblEngineUrl.setText(GuiPreferences.getEngineUri());
+
+		btnRun.setText("Run");
+		btnRun.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent evt) {
+				btnRunActionPerformed(evt);
+			}
+		});
+		
+		lblPrd.setForeground(Color.RED);
+
+		GroupLayout layout = new GroupLayout(getContentPane());
+		layout.setHorizontalGroup(
+			layout.createParallelGroup(Alignment.LEADING)
+				.addGroup(layout.createSequentialGroup()
+					.addComponent(sendLog, GroupLayout.PREFERRED_SIZE, 640, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addGroup(layout.createParallelGroup(Alignment.LEADING)
+						.addGroup(layout.createSequentialGroup()
+							.addComponent(btnRun)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(jSeparator1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+						.addGroup(layout.createSequentialGroup()
+							.addGap(10)
+							.addComponent(lblPrd)))
+					.addGap(10)
+					.addComponent(receiveLog, GroupLayout.PREFERRED_SIZE, 640, GroupLayout.PREFERRED_SIZE))
+				.addGroup(layout.createSequentialGroup()
+					.addContainerGap()
+					.addComponent(openButton)
+					.addGap(66)
+					.addComponent(jLabel1)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(cbEngineUrl, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(lblEngineUrl))
+		);
+		layout.setVerticalGroup(
+			layout.createParallelGroup(Alignment.LEADING)
+				.addGroup(layout.createSequentialGroup()
+					.addGroup(layout.createParallelGroup(Alignment.BASELINE)
+						.addComponent(openButton)
+						.addComponent(cbEngineUrl, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+						.addComponent(jLabel1)
+						.addComponent(lblEngineUrl))
+					.addPreferredGap(ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
+					.addGroup(layout.createParallelGroup(Alignment.LEADING)
+						.addComponent(sendLog, GroupLayout.PREFERRED_SIZE, 763, GroupLayout.PREFERRED_SIZE)
+						.addGroup(layout.createSequentialGroup()
+							.addComponent(btnRun)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(lblPrd))))
+				.addGroup(layout.createSequentialGroup()
+					.addGap(44)
+					.addComponent(jSeparator1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+				.addGroup(layout.createSequentialGroup()
+					.addContainerGap(54, Short.MAX_VALUE)
+					.addComponent(receiveLog, GroupLayout.PREFERRED_SIZE, 763, GroupLayout.PREFERRED_SIZE))
+		);
+		getContentPane().setLayout(layout);
+
+		pack();
+	}
+
+	private void openButtonActionPerformed(ActionEvent evt) {
+		if (evt.getSource() == openButton) {
+			fileChooser.setCurrentDirectory(new File(GuiPreferences.getXmlStartPath()));
 			final int returnVal = fileChooser.showOpenDialog(XmlTesterGui.this);
 
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				final File file = fileChooser.getSelectedFile();
-				System.out.println("Opening: " + file.getName() + ".");
+				selectedFile = fileChooser.getSelectedFile();
+				GuiPreferences.setXmlStartPath(selectedFile.getPath());
 
 				BufferedReader br = null;
 				try {
-					br = new BufferedReader(new FileReader(file));
+					br = new BufferedReader(new FileReader(selectedFile));
 					final StringBuilder sb = new StringBuilder();
-					String line = "";
+					String line;
 					while ((line = br.readLine()) != null) {
-						sb.append(line + "\n");
+						sb.append(line).append("\n");
 					}
 
 					final String formattedRequest = XmlTestUtils.formatXML(sb.toString());
-					System.out.println("Sending...\n");
-					System.out.println(formattedRequest);
-					sendLog.append(formattedRequest);
-
-					final String responseXml = EngineService.callWSEngine(sb.toString());
-
-					final String formattedResponse = XmlTestUtils.formatXML(responseXml);
-					System.out.println("Receiving...\n");
-					System.out.println(formattedResponse);
-					receiveLog.append(formattedResponse);
+					sendLog.setText(formattedRequest);
 
 				} catch (final FileNotFoundException e) {
-					System.out.println("File not found: " + file);
+					System.out.println("File not found: " + selectedFile);
 				} catch (final IOException e) {
 					e.printStackTrace();
 				} catch (final TransformerException e) {
-					e.printStackTrace();
-				} catch (final SOAPException e) {
-					e.printStackTrace();
-				} catch (final SAXException e) {
-					e.printStackTrace();
-				} catch (final ParserConfigurationException e) {
 					e.printStackTrace();
 				} finally {
 					if (br != null) {
@@ -122,33 +221,64 @@ public class XmlTesterGui extends JPanel implements ActionListener {
 		}
 	}
 
-	/**
-	 * Create the GUI and show it. For thread safety, this method should be
-	 * invoked from the event dispatch thread.
-	 */
-	private static void createAndShowGUI() {
-		// Create and set up the window.
-		final JFrame frame = new JFrame("XML tester");
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-		// Add content to the window.
-		frame.add(new XmlTesterGui());
-
-		// Display the window.
-		frame.pack();
-		frame.setVisible(true);
+	private void cbEngineUrlActionPerformed(ActionEvent evt) {
+		String engineUrl = engineUrls.get(cbEngineUrl.getSelectedIndex());
+		GuiPreferences.setEngineUri(engineUrl);
+		lblEngineUrl.setText(engineUrl);
+		lblPrd.setText("prd".equals(cbEngineUrl.getSelectedItem()) ? "PRD!!!" : "");
 	}
 
-	public static void main(final String[] args) {
-		// creating and showing this application's GUI.
-		SwingUtilities.invokeLater(new Runnable() {
+	private void btnRunActionPerformed(ActionEvent evt){
+		System.out.println("Sending...\n");
+		System.out.println(sendLog.getText());
+		try {
+			final String responseXml = EngineService.callWSEngine(sendLog.getText());
+
+			final String formattedResponse = XmlTestUtils.formatXML(responseXml);
+			
+			System.out.println("Receiving...\n");
+			System.out.println(formattedResponse);
+			receiveLog.append(formattedResponse);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void main(String args[]) {
+		try {
+			for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+				if ("Nimbus".equals(info.getName())) {
+					UIManager.setLookAndFeel(info.getClassName());
+					break;
+				}
+			}
+		} catch (ClassNotFoundException ex) {
+			LOGGER.log(java.util.logging.Level.SEVERE, null, ex);
+		} catch (InstantiationException ex) {
+			LOGGER.log(java.util.logging.Level.SEVERE, null, ex);
+		} catch (IllegalAccessException ex) {
+			LOGGER.log(java.util.logging.Level.SEVERE, null, ex);
+		} catch (UnsupportedLookAndFeelException ex) {
+			LOGGER.log(java.util.logging.Level.SEVERE, null, ex);
+		}
+		
+		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				// Turn off metal's use of bold fonts
-				UIManager.put("swing.boldMetal", Boolean.FALSE);
-				createAndShowGUI();
+				new XmlTesterGui().setVisible(true);
 			}
 		});
 	}
+	
+	
+	private static Map<Integer, String> setupEngineUrls() {
+		Map<Integer, String> urls = new HashMap<Integer, String>();
+		urls.put(0, "http://localhost:8080/WebServiceEngine/services/WSEngine/invoke");
+		urls.put(1, "http://omappint:8080/WebServiceEngine/services/WSEngine/invoke");
+		urls.put(2, "http://omappqua:8080/WebServiceEngine/services/WSEngine/invoke");
+		urls.put(3, "http://omappply:8080/WebServiceEngine/services/WSEngine/invoke");
+		urls.put(4, "http://omappprd:8080/WebServiceEngine/services/WSEngine/invoke");
 
+		return urls;
+	}
 }

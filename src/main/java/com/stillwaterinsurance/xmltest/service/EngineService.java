@@ -36,16 +36,11 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 public class EngineService {
-
-	//TODO - add selection in UI for engine url
-	private static final String ENGINE_URI = "http://localhost:8080/WebServiceEngine/services/WSEngine/invoke";
-//	private static final String ENGINE_URI = "http://omappqua:8080/WebServiceEngine/services/WSEngine/invoke";
-//	private static final String ENGINE_URI = "http://omappint:8080/WebServiceEngine/services/WSEngine/invoke";
 	
 	public static final String callWSEngine(final String acordRequestXml) 
 			throws IOException, SOAPException, SAXException, ParserConfigurationException, TransformerException {
-		String soapMessage = null;
-		String responseXml = null;
+		String soapMessage;
+		String responseXml;
 		
 		//add soap envelope/header
 		soapMessage = addSoapWrapper(acordRequestXml);
@@ -61,7 +56,7 @@ public class EngineService {
 		String responseText = "";
 
 		final CloseableHttpClient client = HttpClientBuilder.create().build();
-		final HttpPost postRequest = new HttpPost(ENGINE_URI);
+		final HttpPost postRequest = new HttpPost(GuiPreferences.getEngineUri());
 
 		try {
 			postRequest.setEntity(new StringEntity(soapMessage));
