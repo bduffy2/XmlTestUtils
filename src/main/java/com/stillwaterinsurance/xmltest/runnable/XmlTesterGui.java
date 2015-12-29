@@ -45,7 +45,6 @@ public class XmlTesterGui extends JFrame {
 	private static final Logger LOGGER = Logger.getLogger(XmlTesterGui.class.getName());
 	
 	private JFileChooser fileChooser = new JFileChooser();
-	private File selectedFile;
 
 	private static final Map<Integer, String> engineUrls = setupEngineUrls();
 
@@ -103,7 +102,8 @@ public class XmlTesterGui extends JFrame {
 			}
 		});
 
-		cbEngineUrl.setModel(new DefaultComboBoxModel(new String[] { "local", "int", "qua", "ply", "prd" }));
+		cbEngineUrl.setModel(new DefaultComboBoxModel(new String[] { "local", "appqua01-oma", "omappqua", "omappint", 
+				"omappply", "omappprd" }));
 		cbEngineUrl.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent evt) {
@@ -124,41 +124,53 @@ public class XmlTesterGui extends JFrame {
 		});
 		
 		lblPrd.setForeground(Color.RED);
+		
+		JButton btnClear = new JButton("Clear");
+		btnClear.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				receiveLog.setText("");
+			}
+		});
 
 		GroupLayout layout = new GroupLayout(getContentPane());
 		layout.setHorizontalGroup(
 			layout.createParallelGroup(Alignment.LEADING)
 				.addGroup(layout.createSequentialGroup()
-					.addComponent(sendLog, GroupLayout.PREFERRED_SIZE, 640, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.RELATED)
 					.addGroup(layout.createParallelGroup(Alignment.LEADING)
 						.addGroup(layout.createSequentialGroup()
-							.addComponent(btnRun)
+							.addComponent(sendLog, GroupLayout.PREFERRED_SIZE, 640, GroupLayout.PREFERRED_SIZE)
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(jSeparator1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+							.addGroup(layout.createParallelGroup(Alignment.LEADING)
+								.addGroup(layout.createSequentialGroup()
+									.addComponent(btnRun)
+									.addPreferredGap(ComponentPlacement.RELATED)
+									.addComponent(jSeparator1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+								.addGroup(layout.createSequentialGroup()
+									.addGap(10)
+									.addComponent(lblPrd))))
 						.addGroup(layout.createSequentialGroup()
-							.addGap(10)
-							.addComponent(lblPrd)))
+							.addContainerGap()
+							.addComponent(openButton)
+							.addGap(66)
+							.addComponent(jLabel1)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addGroup(layout.createParallelGroup(Alignment.LEADING)
+								.addComponent(lblEngineUrl)
+								.addComponent(cbEngineUrl, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))))
 					.addGap(10)
-					.addComponent(receiveLog, GroupLayout.PREFERRED_SIZE, 640, GroupLayout.PREFERRED_SIZE))
-				.addGroup(layout.createSequentialGroup()
-					.addContainerGap()
-					.addComponent(openButton)
-					.addGap(66)
-					.addComponent(jLabel1)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(cbEngineUrl, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(lblEngineUrl))
+					.addGroup(layout.createParallelGroup(Alignment.TRAILING)
+						.addComponent(receiveLog, GroupLayout.PREFERRED_SIZE, 640, GroupLayout.PREFERRED_SIZE)
+						.addGroup(layout.createSequentialGroup()
+							.addComponent(btnClear)
+							.addContainerGap())))
 		);
 		layout.setVerticalGroup(
-			layout.createParallelGroup(Alignment.LEADING)
+			layout.createParallelGroup(Alignment.TRAILING)
 				.addGroup(layout.createSequentialGroup()
 					.addGroup(layout.createParallelGroup(Alignment.BASELINE)
 						.addComponent(openButton)
 						.addComponent(cbEngineUrl, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-						.addComponent(jLabel1)
-						.addComponent(lblEngineUrl))
+						.addComponent(jLabel1))
 					.addPreferredGap(ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
 					.addGroup(layout.createParallelGroup(Alignment.LEADING)
 						.addComponent(sendLog, GroupLayout.PREFERRED_SIZE, 763, GroupLayout.PREFERRED_SIZE)
@@ -167,11 +179,16 @@ public class XmlTesterGui extends JFrame {
 							.addPreferredGap(ComponentPlacement.RELATED)
 							.addComponent(lblPrd))))
 				.addGroup(layout.createSequentialGroup()
-					.addGap(44)
-					.addComponent(jSeparator1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-				.addGroup(layout.createSequentialGroup()
-					.addContainerGap(54, Short.MAX_VALUE)
+					.addGap(23)
+					.addGroup(layout.createParallelGroup(Alignment.TRAILING)
+						.addComponent(jSeparator1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+						.addComponent(btnClear))
+					.addGap(8)
 					.addComponent(receiveLog, GroupLayout.PREFERRED_SIZE, 763, GroupLayout.PREFERRED_SIZE))
+				.addGroup(layout.createSequentialGroup()
+					.addContainerGap(22, Short.MAX_VALUE)
+					.addComponent(lblEngineUrl)
+					.addGap(781))
 		);
 		getContentPane().setLayout(layout);
 
@@ -184,7 +201,7 @@ public class XmlTesterGui extends JFrame {
 			final int returnVal = fileChooser.showOpenDialog(XmlTesterGui.this);
 
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				selectedFile = fileChooser.getSelectedFile();
+				File selectedFile = fileChooser.getSelectedFile();
 				GuiPreferences.setXmlStartPath(selectedFile.getPath());
 
 				BufferedReader br = null;
@@ -215,8 +232,6 @@ public class XmlTesterGui extends JFrame {
 					}
 				}
 
-			} else {
-				System.out.println("Open command cancelled by user.\n");
 			}
 		}
 	}
@@ -225,20 +240,21 @@ public class XmlTesterGui extends JFrame {
 		String engineUrl = engineUrls.get(cbEngineUrl.getSelectedIndex());
 		GuiPreferences.setEngineUri(engineUrl);
 		lblEngineUrl.setText(engineUrl);
-		lblPrd.setText("prd".equals(cbEngineUrl.getSelectedItem()) ? "PRD!!!" : "");
+		lblPrd.setText("omappprd".equals(cbEngineUrl.getSelectedItem()) ? "PRD!!!" : "");
 	}
 
 	private void btnRunActionPerformed(ActionEvent evt){
-		System.out.println("Sending...\n");
-		System.out.println(sendLog.getText());
 		try {
 			final String responseXml = EngineService.callWSEngine(sendLog.getText());
-
 			final String formattedResponse = XmlTestUtils.formatXML(responseXml);
-			
-			System.out.println("Receiving...\n");
-			System.out.println(formattedResponse);
-			receiveLog.append(formattedResponse);
+			if("".equals(receiveLog.getText())) {
+				//This is needed to allow the clear button to always work. Not sure why, but if we append to 
+				//an empty TextArea the clear button event won't fire correctly
+				receiveLog.setText(formattedResponse);
+			}
+			else {
+				receiveLog.append(formattedResponse);
+			}
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -273,11 +289,13 @@ public class XmlTesterGui extends JFrame {
 	
 	private static Map<Integer, String> setupEngineUrls() {
 		Map<Integer, String> urls = new HashMap<Integer, String>();
-		urls.put(0, "http://localhost:8080/WebServiceEngine/services/WSEngine/invoke");
-		urls.put(1, "http://omappint:8080/WebServiceEngine/services/WSEngine/invoke");
-		urls.put(2, "http://omappqua:8080/WebServiceEngine/services/WSEngine/invoke");
-		urls.put(3, "http://omappply:8080/WebServiceEngine/services/WSEngine/invoke");
-		urls.put(4, "http://omappprd:8080/WebServiceEngine/services/WSEngine/invoke");
+		int i = 0;
+		urls.put(i++, "http://localhost:8080/WebServiceEngine/services/WSEngine/invoke");
+		urls.put(i++, "http://appqua01-oma:8080/WebServiceEngine/services/WSEngine/invoke");
+		urls.put(i++, "http://omappqua:8080/WebServiceEngine/services/WSEngine/invoke");
+		urls.put(i++, "http://omappint:8080/WebServiceEngine/services/WSEngine/invoke");
+		urls.put(i++, "http://omappply:8080/WebServiceEngine/services/WSEngine/invoke");
+		urls.put(i++, "http://omappprd:8080/WebServiceEngine/services/WSEngine/invoke");
 
 		return urls;
 	}
